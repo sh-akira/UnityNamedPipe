@@ -1,0 +1,2 @@
+# UnityNamedPipe
+名前付きパイプでUnityを外部アプリからコントロール
