@@ -41,6 +41,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AsyncLock.cs" />
     <Compile Include="BinarySerializer.cs" />
     <Compile Include="DataReceivedEventArgs.cs" />
     <Compile Include="NamedPipeBase.cs" />

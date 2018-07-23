@@ -14,8 +14,8 @@ namespace UnityNamedPipe
 {
     public class NamedPipeBase
     {
-        protected Stream namedPipeSendStream;
-        protected Stream namedPipeReceiveStream;
+        protected NamedPipeClientStream namedPipeSendStream;
+        protected NamedPipeServerStream namedPipeReceiveStream;
 
         public bool IsConnected = false;
 
@@ -59,7 +59,7 @@ namespace UnityNamedPipe
                     }
                 }
             }
-            catch
+            catch (Exception)
             {
                 //エラー発生時はそのまま抜ける
             }
@@ -67,18 +67,25 @@ namespace UnityNamedPipe
 
         protected ConcurrentDictionary<string, object> WaitReceivedDictionary = new ConcurrentDictionary<string, object>();
 
+        private AsyncLock SendLock = new AsyncLock();
+
         public async Task<string> SendCommandAsync(object command, string requestId = null)
         {
-            if (namedPipeSendStream == null) return null;
-            if (string.IsNullOrEmpty(requestId)) requestId = Guid.NewGuid().ToString();
-            //sendType
-            await WriteStringAsync(namedPipeSendStream, $"{command.GetType().Name}|{requestId}");
-            //sendCommand
-            var data = BinarySerializer.Serialize(command);
-            var lengthBytes = BitConverter.GetBytes(data.Length);
-            await namedPipeSendStream.WriteAsync(lengthBytes, 0, lengthBytes.Length);
-            await namedPipeSendStream.WriteAsync(data, 0, data.Length);
-            return requestId;
+            using (await SendLock.LockAsync())
+            {
+                if (namedPipeSendStream == null) return null;
+                namedPipeSendStream.WaitForPipeDrain();
+                if (string.IsNullOrEmpty(requestId)) requestId = Guid.NewGuid().ToString();
+                //sendType
+                await WriteStringAsync(namedPipeSendStream, $"{command.GetType().Name}|{requestId}");
+                //sendCommand
+                var data = BinarySerializer.Serialize(command);
+                var lengthBytes = BitConverter.GetBytes(data.Length);
+                await namedPipeSendStream.WriteAsync(lengthBytes, 0, lengthBytes.Length);
+                await namedPipeSendStream.WriteAsync(data, 0, data.Length);
+                namedPipeSendStream.WaitForPipeDrain();
+                return requestId;
+            }
         }
 
         public async Task SendCommandWaitAsync(object command, Action<object> returnAction)

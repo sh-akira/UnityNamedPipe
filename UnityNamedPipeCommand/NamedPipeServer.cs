@@ -12,13 +12,16 @@ namespace UnityNamedPipe
 {
     public class NamedPipeServer : NamedPipeBase
     {
+        private string currentPipeName = null;
+
         public void Start(string pipeName)
         {
+            currentPipeName = pipeName;
             var t = Task.Run(async () =>
             {
                 NamedPipeServerStream serverStream = null;
                 NamedPipeClientStream clientStream = null;
-                while (true) //切断時エラーで抜けるので次の接続のために再試行
+                while (DoStop == false) //切断時エラーで抜けるので次の接続のために再試行
                 {
                     try
                     {
@@ -51,6 +54,32 @@ namespace UnityNamedPipe
                     }
                 }
             });
+        }
+
+        private bool DoStop = false;
+
+        public void Stop()
+        {
+            if (string.IsNullOrEmpty(currentPipeName)) return;
+            DoStop = true;
+            if (namedPipeReceiveStream != null && namedPipeReceiveStream.IsConnected)
+            {
+                namedPipeReceiveStream.Close();
+                namedPipeReceiveStream.Dispose();
+                if (namedPipeSendStream != null && namedPipeSendStream.IsConnected)
+                {
+                    namedPipeSendStream.Close();
+                    namedPipeSendStream.Dispose();
+                }
+            }
+            else
+            {
+                //ダミーで待機中のサーバーにつないで、切断することで待機を終わらせる
+                using (var client = new NamedPipeClientStream(".", currentPipeName, PipeDirection.Out, PipeOptions.None, TokenImpersonationLevel.None))
+                {
+                    client.Connect(100);
+                }
+            }
         }
     }
 }

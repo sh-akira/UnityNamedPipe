@@ -15,7 +15,7 @@ namespace UnityNamedPipe
         public static object Deserialize(byte[] data, Type type)
         {
             using (var ms = new MemoryStream(data))
-            using (var reader = XmlDictionaryReader.CreateBinaryReader(ms, null, new XmlDictionaryReaderQuotas()))
+            using (var reader = XmlDictionaryReader.CreateBinaryReader(ms, null, new XmlDictionaryReaderQuotas() { MaxArrayLength = int.MaxValue }))
             {
                 DataContractSerializer serializer = new DataContractSerializer(type);
                 return serializer.ReadObject(reader);

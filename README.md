@@ -11,6 +11,12 @@ UnityとWindowsアプリ間で通信ができます。
   
 テスト環境は Unity 2018.1.6f1 で Scripting が .NET4.0 です  
 
+# 更新履歴
+2018/07/24  
+・大きいデータを送信できなかった問題修正  
+・別スレッドから同時に送信して破損しないようにAsyncLockを追加  
+・サーバー側に待ち受けを停止するStop関数を追加  
+
 # ビルド方法
 UnityNamedPipeWPF\UnityNamedPipeWPF.slnを開いてリビルド  
 UnityNamedPipe.dllがUnityNamedPipeSample\Assetsに生成されるのを確認  
