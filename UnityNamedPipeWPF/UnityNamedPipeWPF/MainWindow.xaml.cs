@@ -26,13 +26,11 @@ namespace UnityNamedPipeWPF
             InitializeComponent();
         }
 
+        private NamedPipeServer server;
         private NamedPipeClient client;
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            client = new NamedPipeClient();
-            client.ReceivedEvent += Client_Received;
-            client.Start("SamplePipeName");
         }
 
         private async void SendButton_Click(object sender, RoutedEventArgs e)
@@ -62,6 +60,29 @@ namespace UnityNamedPipeWPF
                 var d = (PipeCommands.SendMessage)e.Data;
                 MessageBox.Show($"[Client]ReceiveFromServer:{d.Message}");
             }
+        }
+
+        private void StartServer_Click(object sender, RoutedEventArgs e)
+        {
+            server = new NamedPipeServer();
+            server.Start("SamplePipeName");
+        }
+
+        private void StopServer_Click(object sender, RoutedEventArgs e)
+        {
+            server.Stop();
+        }
+
+        private void StartClient_Click(object sender, RoutedEventArgs e)
+        {
+            client = new NamedPipeClient();
+            client.ReceivedEvent += Client_Received;
+            client.Start("SamplePipeName");
+        }
+
+        private void StopClient_Click(object sender, RoutedEventArgs e)
+        {
+            client.Stop();
         }
     }
 }

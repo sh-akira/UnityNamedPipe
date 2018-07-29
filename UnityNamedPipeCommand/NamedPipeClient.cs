@@ -18,7 +18,7 @@ namespace UnityNamedPipe
             {
                 NamedPipeClientStream clientStream = null;
                 NamedPipeServerStream serverStream = null;
-                while (true) //切断時エラーで抜けるので次の接続のために再試行
+                while (DoStop == false) //切断時エラーで抜けるので次の接続のために再試行
                 {
                     try
                     {
@@ -49,6 +49,18 @@ namespace UnityNamedPipe
                     }
                 }
             });
+        }
+
+        private bool DoStop = false;
+
+        public void Stop()
+        {
+            DoStop = true;
+            //if (namedPipeReceiveStream != null && namedPipeReceiveStream.IsConnected) namedPipeReceiveStream.Disconnect();
+            namedPipeReceiveStream?.Close();
+            namedPipeReceiveStream?.Dispose();
+            namedPipeSendStream?.Close();
+            namedPipeSendStream?.Dispose();
         }
     }
 }

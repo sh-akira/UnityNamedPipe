@@ -7,6 +7,10 @@
         mc:Ignorable="d"
         Title="ControlWIndow" Height="80" Width="500" Loaded="Window_Loaded">
     <DockPanel>
+        <Button Content="StartServer" Name="StartServer" Click="StartServer_Click" HorizontalAlignment="Center" FontSize="16"/>
+        <Button Content="StopServer" Name="StopServer" Click="StopServer_Click" HorizontalAlignment="Center" FontSize="16"/>
+        <Button Content="StartClient" Name="StartClient" Click="StartClient_Click" HorizontalAlignment="Center" FontSize="16"/>
+        <Button Content="StopClient" Name="StopClient" Click="StopClient_Click" HorizontalAlignment="Center" FontSize="16"/>
         <Button Content="Send Test Message" Name="SendButton" Click="SendButton_Click" HorizontalAlignment="Center" FontSize="16"/>
         <Button Content="Move X + 1.0f" Name="MoveButton" Click="MoveButton_Click" HorizontalAlignment="Center" FontSize="16"/>
         <Button Content="GetCurrent X" Name="GetCurrentXButton" Click="GetCurrentXButton_Click" HorizontalAlignment="Center" FontSize="16"/>

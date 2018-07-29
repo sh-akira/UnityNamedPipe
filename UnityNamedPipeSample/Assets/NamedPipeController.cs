@@ -26,6 +26,12 @@ public class NamedPipeController : MonoBehaviour
 
     }
 
+    private void OnApplicationQuit()
+    {
+        server.ReceivedEvent -= Server_Received;
+        server.Stop();
+    }
+
     private async void Server_Received(object sender, DataReceivedEventArgs e)
     {
         if (e.CommandType == typeof(PipeCommands.SendMessage))

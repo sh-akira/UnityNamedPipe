@@ -14,46 +14,41 @@ namespace UnityNamedPipe
     {
         private string currentPipeName = null;
 
-        public void Start(string pipeName)
+        public async void Start(string pipeName)
         {
             currentPipeName = pipeName;
-            var t = Task.Run(async () =>
+            NamedPipeServerStream serverStream = null;
+            NamedPipeClientStream clientStream = null;
+            while (DoStop == false) //切断時エラーで抜けるので次の接続のために再試行
             {
-                NamedPipeServerStream serverStream = null;
-                NamedPipeClientStream clientStream = null;
-                while (DoStop == false) //切断時エラーで抜けるので次の接続のために再試行
+                try
                 {
+                    //初期化
+                    serverStream = new NamedPipeServerStream(pipeName, PipeDirection.In, 1); //サーバー数1
+
+                    await Task.Run(() => serverStream.WaitForConnection()); //接続が来るまで待つ UnityのMonoはAsync使えない
+
+                    clientStream = new NamedPipeClientStream(".", pipeName + "receive", PipeDirection.Out, PipeOptions.None, TokenImpersonationLevel.None); //UnityのMonoはImpersonation使えない
                     try
                     {
-                        //初期化
-                        serverStream = new NamedPipeServerStream(pipeName, PipeDirection.In, 1); //サーバー数1
-
-                        serverStream.WaitForConnection(); //接続が来るまで待つ UnityのMonoはAsync使えない
-
-                        clientStream = new NamedPipeClientStream(".", pipeName + "receive", PipeDirection.Out, PipeOptions.None, TokenImpersonationLevel.None); //UnityのMonoはImpersonation使えない
-                        try
-                        {
-                            clientStream.Connect(500); //UnityのMonoはAsync使えない
-                        }
-                        catch (TimeoutException) { }
-                        if (clientStream.IsConnected == false) continue;
-
-                        namedPipeReceiveStream = serverStream;
-                        namedPipeSendStream = clientStream;
-
-                        await RunningAsync();
-
+                        clientStream.Connect(500); //UnityのMonoはAsync使えない
                     }
-                    finally
-                    {
-                        if (serverStream != null && serverStream.IsConnected) serverStream.Disconnect();
-                        serverStream?.Close();
-                        serverStream?.Dispose();
-                        clientStream?.Close();
-                        clientStream?.Dispose();
-                    }
+                    catch (TimeoutException) { }
+                    if (clientStream.IsConnected == false) continue;
+
+                    namedPipeReceiveStream = serverStream;
+                    namedPipeSendStream = clientStream;
+
+                    await RunningAsync();
+
                 }
-            });
+                finally
+                {
+                    if (serverStream != null && serverStream.IsConnected) serverStream.Disconnect();
+                    serverStream?.Close();
+                    clientStream?.Close();
+                }
+            }
         }
 
         private bool DoStop = false;
@@ -65,11 +60,18 @@ namespace UnityNamedPipe
             if (namedPipeReceiveStream != null && namedPipeReceiveStream.IsConnected)
             {
                 namedPipeReceiveStream.Close();
-                namedPipeReceiveStream.Dispose();
                 if (namedPipeSendStream != null && namedPipeSendStream.IsConnected)
                 {
                     namedPipeSendStream.Close();
-                    namedPipeSendStream.Dispose();
+                }
+                //ダミーで待機中のサーバーにつないで、切断することで待機を終わらせる
+                using (var client = new NamedPipeClientStream(".", currentPipeName, PipeDirection.Out, PipeOptions.None, TokenImpersonationLevel.None))
+                {
+                    try
+                    {
+                        client.Connect(100);
+                    }
+                    catch (Exception) { }
                 }
             }
             else
@@ -77,7 +79,22 @@ namespace UnityNamedPipe
                 //ダミーで待機中のサーバーにつないで、切断することで待機を終わらせる
                 using (var client = new NamedPipeClientStream(".", currentPipeName, PipeDirection.Out, PipeOptions.None, TokenImpersonationLevel.None))
                 {
-                    client.Connect(100);
+                    try
+                    {
+                        client.Connect(100);
+                    }
+                    catch (Exception) { }
+                }
+                namedPipeReceiveStream.Close();
+                namedPipeSendStream.Close();
+                //ダミーで待機中のサーバーにつないで、切断することで待機を終わらせる
+                using (var client = new NamedPipeClientStream(".", currentPipeName, PipeDirection.Out, PipeOptions.None, TokenImpersonationLevel.None))
+                {
+                    try
+                    {
+                        client.Connect(100);
+                    }
+                    catch (Exception) { }
                 }
             }
         }

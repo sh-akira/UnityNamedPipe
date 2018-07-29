@@ -103,8 +103,11 @@ namespace UnityNamedPipe
 
         private async Task<string> ReadString(Stream stream)
         {
-            int len = stream.ReadByte() * 256;
-            len += stream.ReadByte();
+            byte[] inOneBuffer = new byte[1];
+            await stream.ReadAsync(inOneBuffer, 0, 1);
+            int len = inOneBuffer[0] * 256;
+            await stream.ReadAsync(inOneBuffer, 0, 1);
+            len += inOneBuffer[0];
             byte[] inBuffer = new byte[len];
             await stream.ReadAsync(inBuffer, 0, len);
             return Encoding.UTF8.GetString(inBuffer);
@@ -114,8 +117,12 @@ namespace UnityNamedPipe
         {
             byte[] outBuffer = Encoding.UTF8.GetBytes(text);
             int len = outBuffer.Length;
-            stream.WriteByte((byte)(len / 256));
-            stream.WriteByte((byte)(len & 255));
+            byte[] outTwoBuffer = new byte[2]
+                {
+                (byte)(len / 256),
+                (byte)(len & 255)
+            };
+            await stream.WriteAsync(outTwoBuffer, 0, 2);
             await stream.WriteAsync(outBuffer, 0, len);
         }
     }
