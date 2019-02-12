@@ -60,6 +60,12 @@ public class NamedPipeController : MonoBehaviour
             await server.SendCommandAsync(new PipeCommands.SendMessage { Message = "TestFromServer" });
         }
     }
+    
+    private void OnApplicationQuit()
+    {
+        server.ReceivedEvent -= Server_Received;
+        server.Stop();
+    }
 }
 ```
 
